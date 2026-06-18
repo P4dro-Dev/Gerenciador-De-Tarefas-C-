@@ -30,6 +30,7 @@ Este projeto põe em prática pilares essenciais da programação em C:
    git clone [https://github.com/SEU-USUARIO/gerenciador-tarefas-c.git](https://github.com/SEU-USUARIO/gerenciador-tarefas-c.git)
    cd gerenciador-tarefas-c
 II. Compile o arquivo fonte:
+
 ``bash
 Bash
 gcc main.c -o gerenciador
@@ -42,5 +43,5 @@ Bash
 Windows:
 
 Bash
-gerenciador.exe``bash
+gerenciador.exe
  ``bash
