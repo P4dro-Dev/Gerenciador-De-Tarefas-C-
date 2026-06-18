@@ -45,4 +45,4 @@ Windows:
 
 Bash
 gerenciador.exe
-```bash
+
