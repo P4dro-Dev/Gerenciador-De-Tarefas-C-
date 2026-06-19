@@ -1,0 +1,228 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//criei um tipo struct para guardar as informações das tarefas.
+typedef struct {
+    char titulo[51];
+    char descricao[500];
+    int concluida;
+    int prioridade;
+}TAREFA;
+
+//essa função verifica se a descrição e titulo não ultrapassou o tamanho ou esta vazia
+void validacao(char *destino,int tamanho,char *mensagem){
+    int texto_invalido;
+    //variavel para continuar o loop ate o texto se tornar valido
+    do{
+        texto_invalido = 0;
+        
+        printf("%s(maximo de %d caracteres)\n",mensagem,tamanho-1);
+        
+        //verifica se deixou vazio
+        if(fgets(destino,tamanho,stdin) != NULL){
+            
+            //verifica se o '\n' não esta na string. Se não estiver significa que estourou o tamanho
+            if(strchr(destino,'\n') ==NULL){
+                printf("ERRO:texto muito longo! Tente novamente\n\n");
+                texto_invalido=1;
+                
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+                //limpa o buffer do teclado
+                
+            }else {
+                destino[strcspn(destino,"\n")] = '\0';
+            }
+        }else {
+            printf("ERRO: texto não informado\n");
+            texto_invalido=1;
+        }
+    }while(texto_invalido);
+}
+
+void ordenar_tarefas(TAREFA *tarefas,int n){
+    //criei uma função para odernar as tarefas pela sua prioridade por meio do metodo bubble sort
+    TAREFA temp;
+    for(int i = 0; i< n;i++){
+        for(int j=0; j< n-1; j++){
+          if(tarefas[j].prioridade > tarefas[j+1].prioridade){
+            temp=tarefas[j];
+            tarefas[j] = tarefas[j+1];
+            tarefas[j+1] = temp;
+          }  
+        }
+    }
+}
+
+//função para facilitar a  exibição das tarefas
+void mostrar_tarefa(TAREFA tarefas){
+    printf("\n--- %s ---\n",tarefas.titulo);
+    printf("%s\n",tarefas.descricao);
+    printf("prioridade: %d\n",tarefas.prioridade);
+    if(tarefas.concluida){
+        printf("status: concluida\n");
+    }else
+      printf("status: pendente\n");
+}
+
+int main()
+{   
+    int op,n=0;
+    TAREFA *tarefas=NULL;
+    
+    // --- INICIO DA PARTE ADICIONADA: Carregar arquivo salvo (Regra Geral do projeto) ---
+    // Tenta abrir o arquivo "tarefas.bin" para leitura. 
+    FILE *arquivo_leitura = fopen("tarefas.bin", "rb");
+    if (arquivo_leitura != NULL) {
+        fread(&n, sizeof(int), 1, arquivo_leitura); // Lê quantas tarefas existem
+        if (n > 0) {
+            tarefas = malloc(n * sizeof(TAREFA)); // Pede memória para essas tarefas
+            fread(tarefas, sizeof(TAREFA), n, arquivo_leitura); // Copia do arquivo para a memória
+        }
+        fclose(arquivo_leitura); // Fecha o arquivo sempre que terminar
+    }
+    // ----------------------------------------------------------------------------------
+    
+    do{
+        printf("===============================\n");
+        printf("GERENCIADOR DE TAREFAS\n");
+        printf("-----------------------\n");
+        printf("1-Criar nova tarefa\n");
+        printf("2-Mostrar tarefas\n");
+        printf("3-Marcar tarefa como concluida\n");
+        printf("4-remover tarefa\n");
+        printf("5-sair\n");
+        printf("===============================\n");
+        scanf("%d",&op);
+        getchar(); // Consome o '\n' deixado pelo Enter
+        
+        switch(op){
+            case 1:
+               n++;
+               tarefas =realloc(tarefas, n * sizeof(TAREFA));
+               //aumenta o tamanho do vetor tarefas
+               tarefas[n-1].concluida = 0;
+             
+               printf("\n--- NOVA TAREFA ---\n");
+               validacao(tarefas[n-1].titulo,51,"digite o titulo da tarefa\n");
+               printf("titulo gravado com sucesso!\n\n");
+               validacao(tarefas[n-1].descricao,500,"descreva sua tarefa\n");
+               printf("Descrição gravada com sucesso!\n\n");
+               printf("Defina o nivel de prioridade de 1 (alta) a 5 (baixa)\n");
+               scanf("%d",&tarefas[n-1].prioridade);
+               getchar();
+               printf("Tarefa criada com sucesso!\n\n");
+               
+            break;
+            case 2:
+               printf("\n--- LISTA DE TAREFAS ---\n");
+                if (n == 0){
+                    printf("Nenhuma tarefa cadastrada ainda.\n\n");
+                }else{
+                    ordenar_tarefas(tarefas,n);
+                }
+               for(int i=0; i<n;i++){
+                   mostrar_tarefa(tarefas[i]);
+               }
+               
+            break;
+            
+            // --- INICIO DA PARTE ADICIONADA: Funcionalidades que faltavam ---
+            case 3: {
+                printf("\n--- MARCAR TAREFA COMO CONCLUIDA ---\n");
+                if (n == 0) {
+                    printf("Você não tem nenhuma tarefa cadastrada!\n\n");
+                } else {
+                    // Mostra uma lista resumida para o usuário escolher o número
+                    for (int i = 0; i < n; i++) {
+                        printf("[%d] %s - Status: %s\n", i, tarefas[i].titulo, tarefas[i].concluida ? "Concluida" : "Pendente");
+                    }
+                    int indice;
+                    printf("\nDigite o numero (indice) da tarefa que terminou: ");
+                    scanf("%d", &indice);
+                    getchar(); // limpar o buffer
+                    
+                    // Verifica se o usuário digitou um número que existe na lista
+                    if (indice >= 0 && indice < n) {
+                        tarefas[indice].concluida = 1; // 1 significa verdadeiro no C
+                        printf("Sucesso! Tarefa marcada como concluida.\n\n");
+                    } else {
+                        printf("ERRO: Indice invalido. Tente novamente.\n\n");
+                    }
+                }
+                break;
+            }
+            case 4: {
+                printf("\n--- REMOVER TAREFA ---\n");
+                if (n == 0) {
+                    printf("Nenhuma tarefa para remover!\n\n");
+                } else {
+                    for (int i = 0; i < n; i++) {
+                        printf("[%d] %s\n", i, tarefas[i].titulo);
+                    }
+                    int ind_rem;
+                    printf("\nDigite o numero da tarefa que deseja excluir: ");
+                    scanf("%d", &ind_rem);
+                    getchar();
+                    
+                    // Valida se o número existe
+                    if (ind_rem >= 0 && ind_rem < n) {
+                        char confirmacao;
+                        printf("CUIDADO! Tem certeza que deseja apagar '%s'? (S/N): ", tarefas[ind_rem].titulo);
+                        scanf("%c", &confirmacao);
+                        getchar();
+                        
+                        // Se for 'S' ou 's', a gente remove
+                        if (confirmacao == 'S' || confirmacao == 's') {
+                            // Puxa as tarefas que estão na frente para tapar o "buraco" da excluída
+                            for (int i = ind_rem; i < n - 1; i++) {
+                                tarefas[i] = tarefas[i + 1];
+                            }
+                            n--; // Diminui a contagem total de tarefas
+                            
+                            // Ajusta o tamanho da memória de acordo com o novo 'n'
+                            if (n > 0) {
+                                tarefas = realloc(tarefas, n * sizeof(TAREFA));
+                            } else {
+                                free(tarefas); // Se não sobrou nenhuma, limpa tudo
+                                tarefas = NULL;
+                            }
+                            printf("Tarefa removida com sucesso!\n\n");
+                        } else {
+                            printf("Acao cancelada. Nenhuma tarefa foi apagada.\n\n");
+                        }
+                    } else {
+                        printf("ERRO: Indice invalido!\n\n");
+                    }
+                }
+                break;
+            }
+            case 5: {
+                printf("\nSalvando seus dados no arquivo...\n");
+                
+                // Abre o arquivo para escrita ("wb" = write binary)
+                FILE *arquivo_escrita = fopen("tarefas.bin", "wb");
+                if (arquivo_escrita != NULL) {
+                    fwrite(&n, sizeof(int), 1, arquivo_escrita); // Guarda o total de tarefas
+                    if (n > 0) {
+                        fwrite(tarefas, sizeof(TAREFA), n, arquivo_escrita); // Guarda o vetor inteiro
+                    }
+                    fclose(arquivo_escrita);
+                }
+                
+                printf("Tudo salvo! Saindo do programa... Ate logo!\n");
+                break;
+            }
+            default:
+                // Caso o usuário digite '6' ou uma letra sem querer no menu principal
+                printf("\nERRO: Opcao invalida! Por favor, escolha um numero de 1 a 5.\n\n");
+                break;
+            // ------------------------------------------------------------------
+        }
+    }while(op!=5);
+    
+    free(tarefas);
+
+    return 0;
+}
